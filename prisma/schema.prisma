@@ -1,0 +1,77 @@
+generator client {
+    provider = "prisma-client-js"
+    binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
+    output = "/home/ubuntu/hospital_monitoring/node_modules/.prisma/client"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model Monitor {
+  id          String   @id @default(cuid())
+  name        String
+  location    String
+  isActive    Boolean  @default(true)
+  patientName String?
+  patientAge  Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  vitalSigns VitalSign[]
+  alarms     Alarm[]
+
+  @@map("monitors")
+}
+
+model VitalSign {
+  id                String   @id @default(cuid())
+  monitorId         String
+  heartRate         Float
+  bloodPressureSys  Float
+  bloodPressureDia  Float
+  respiratoryRate   Float
+  temperature       Float
+  oxygenSaturation  Float
+  ewsScore          Int
+  mewsScore         Int
+  sepsisRisk        Float
+  suddenDeathRisk   Float
+  timestamp         DateTime @default(now())
+
+  monitor Monitor @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+
+  @@map("vital_signs")
+}
+
+model Alarm {
+  id          String      @id @default(cuid())
+  monitorId   String
+  type        AlarmType
+  severity    AlarmSeverity
+  message     String
+  isActive    Boolean     @default(true)
+  isMuted     Boolean     @default(false)
+  timestamp   DateTime    @default(now())
+  resolvedAt  DateTime?
+
+  monitor Monitor @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+
+  @@map("alarms")
+}
+
+enum AlarmType {
+  VITAL_SIGN
+  EWS_HIGH
+  SEPSIS_RISK
+  SUDDEN_DEATH_RISK
+  TECHNICAL
+}
+
+enum AlarmSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
